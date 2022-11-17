@@ -2,13 +2,14 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-gdupgrader = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+gdupgrader = "7zytPdaZiXNjYQh1cStfAcFws7ZRhSLtUfhdoev9vp5G"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+#cluster = "localnet"
+cluster = "devnet"
 wallet = "/home/alphaprime8/.config/solana/id.json"
 
 [scripts]

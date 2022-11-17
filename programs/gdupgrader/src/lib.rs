@@ -5,9 +5,7 @@ use anchor_lang::solana_program::instruction::Instruction;
 use anchor_lang::solana_program::loader_upgradeable_instruction::UpgradeableLoaderInstruction;
 use solana_program::program::invoke_signed;
 
-// use anchor_lang::solana_program::bpf_loader_upgradeable::upgrade as program_upgrade; // TODO use this instead for building...
-
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("7zytPdaZiXNjYQh1cStfAcFws7ZRhSLtUfhdoev9vp5G");
 
 // consts
 pub const MIN_ACCOUNT_LEN: usize = 9;
@@ -27,6 +25,8 @@ pub mod gdupgrader {
         let seeds = &[&MULTISIG_PDA_SEED[..], &[bump_seed]];
         let signer = &[&seeds[..]];
 
+        msg!("multisig_pda: {:?}", multisig_pda.to_string());
+
         let instruction = Instruction::new_with_bincode(
             bpf_loader_upgradeable::id(),
             &UpgradeableLoaderInstruction::Upgrade,
@@ -34,7 +34,7 @@ pub mod gdupgrader {
                 AccountMeta::new(ctx.accounts.target_program_buffer.key(), false), // target program buffer
                 AccountMeta::new(ctx.accounts.target_program.key(), false), // target program
                 AccountMeta::new(ctx.accounts.source_buffer.key(), false), // tmp buffer account
-                AccountMeta::new(ctx.accounts.signer.key(), false), // spill account
+                AccountMeta::new(ctx.accounts.target_program_buffer.key(), false), // spill account (signer or other?)
                 AccountMeta::new_readonly(sysvar::rent::id(), false),
                 AccountMeta::new_readonly(sysvar::clock::id(), false),
                 AccountMeta::new_readonly(ctx.accounts.multisig_pda.key(), true), // multisig PDA
@@ -45,17 +45,17 @@ pub mod gdupgrader {
             ctx.accounts.target_program_buffer.to_account_info().clone(),
             ctx.accounts.target_program.to_account_info().clone(),
             ctx.accounts.source_buffer.to_account_info().clone(),
-            ctx.accounts.signer.to_account_info().clone(),
+            ctx.accounts.target_program_buffer.to_account_info().clone(), // spill
             ctx.accounts.rent.to_account_info().clone(),
             ctx.accounts.clock.to_account_info().clone(),
             ctx.accounts.multisig_pda.to_account_info().clone(),
         ];
 
-        invoke_signed(
-            &instruction,
-            &accounts,
-            signer,
-        )?;
+        // invoke_signed(
+        //     &instruction,
+        //     &accounts,
+        //     signer,
+        // )?;
 
         Ok(())
     }
@@ -63,13 +63,10 @@ pub mod gdupgrader {
 
 #[derive(Accounts)]
 pub struct Upgrade<'info> {
-    #[account(mut)]
     /// CHECK: bypass
     pub target_program_buffer: AccountInfo<'info>,
-    #[account(mut)]
     /// CHECK: bypass
     pub target_program: AccountInfo<'info>,
-    #[account(mut)]
     /// CHECK: bypass
     pub source_buffer: AccountInfo<'info>,
     #[account(mut)]
