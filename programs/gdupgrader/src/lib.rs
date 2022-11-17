@@ -4,9 +4,8 @@ use anchor_lang::solana_program::{bpf_loader_upgradeable, sysvar};
 use anchor_lang::solana_program::instruction::Instruction;
 use anchor_lang::solana_program::loader_upgradeable_instruction::UpgradeableLoaderInstruction;
 use solana_program::program::invoke_signed;
-use std::str::FromStr;
 
-use anchor_lang::solana_program::bpf_loader_upgradeable::upgrade as program_upgrade; // TODO use this instead for building...
+// use anchor_lang::solana_program::bpf_loader_upgradeable::upgrade as program_upgrade; // TODO use this instead for building...
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
