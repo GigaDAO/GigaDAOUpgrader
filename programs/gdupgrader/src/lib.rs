@@ -20,8 +20,13 @@ pub mod gdupgrader {
 
     pub fn upgrade(ctx: Context<Upgrade>) -> Result<()> {
 
-
-
+        // create signer seed
+        let (multisig_pda, bump_seed) = Pubkey::find_program_address(&[MULTISIG_PDA_SEED], ctx.program_id);
+        if multisig_pda != ctx.accounts.multisig_pda.key() {
+            return err!(ErrorCode::InvalidAuthPda);
+        }
+        let seeds = &[&MULTISIG_PDA_SEED[..], &[bump_seed]];
+        let signer = &[&seeds[..]];
 
         // // TODO add accounts below to context
         //
@@ -102,6 +107,12 @@ pub struct Upgrade<'info> {
 #[derive(Default)]
 pub struct AuthAccount {}
 
+// custom errors
+#[error_code]
+pub enum ErrorCode {
+    #[msg("Invalid Authorizer PDA.")]
+    InvalidAuthPda,
+}
 
 
 
