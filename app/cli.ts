@@ -45,6 +45,7 @@ async function initialize() {
             clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
             multisigPda: multisig_pda,
             systemProgram: anchor.web3.SystemProgram.programId,
+            bfpLoader: anchor.web3.BPF_LOADER_PROGRAM_ID,
         })
         .rpc();
     console.log("Your transaction signature", tx);

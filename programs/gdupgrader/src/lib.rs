@@ -90,6 +90,8 @@ pub struct Upgrade<'info> {
     )]
     pub multisig_pda: Account<'info, AuthAccount>,
     pub system_program: Program<'info, System>,
+    /// CHECK: bypass
+    pub bfp_loader: AccountInfo<'info>,
 }
 
 #[account]
