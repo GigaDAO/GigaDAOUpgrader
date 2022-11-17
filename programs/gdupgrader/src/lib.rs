@@ -28,17 +28,6 @@ pub mod gdupgrader {
         let seeds = &[&MULTISIG_PDA_SEED[..], &[bump_seed]];
         let signer = &[&seeds[..]];
 
-        // let bfp_program_upgrade_address = bpf_loader_upgradeable::id();
-        // let target_program_address = &Pubkey::from_str("7w9oX4fSFFW9YK7iWYqBUzEwXJHa3UY3wP4y8HvpaU2s")?;
-        // let buffer_address = &Pubkey::from_str("3rkWkQ1dzhVgdUSWqscBQqzBpB6nnzppbnnFaHPVuNwG")?;
-        //
-        // let upgrade_ix = program_upgrade(
-        //     bfp_program_upgrade_address,
-        //     buffer_address,
-        //     pda_authority_address,
-        //     spill_address,
-        // );
-
         let instruction = Instruction::new_with_bincode(
             bpf_loader_upgradeable::id(),
             &UpgradeableLoaderInstruction::Upgrade,
@@ -53,20 +42,21 @@ pub mod gdupgrader {
             ],
         );
 
-        //
-        // invoke_signed(
-        //     &instruction,
-        //     &[
-        //         program_buffer.clone(), // target program buffer
-        //         target_program.clone(), // target program
-        //         source_buffer.clone(), // tmp buffer account
-        //         signer_account.clone(), // spill account (signer)
-        //         rent_program.clone(),
-        //         clock_program.clone(),
-        //         multisig_account.clone(), // multisig PDA
-        //     ],
-        //     &[&[b"multisig", target_program.key.as_ref(), &[multisig_bump]]],
-        // )?;
+        let accounts = [
+            ctx.accounts.target_program_buffer.to_account_info().clone(),
+            ctx.accounts.target_program.to_account_info().clone(),
+            ctx.accounts.source_buffer.to_account_info().clone(),
+            ctx.accounts.signer.to_account_info().clone(),
+            ctx.accounts.rent.to_account_info().clone(),
+            ctx.accounts.clock.to_account_info().clone(),
+            ctx.accounts.multisig_pda.to_account_info().clone(),
+        ];
+
+        invoke_signed(
+            &instruction,
+            &accounts,
+            signer,
+        )?;
 
         Ok(())
     }
