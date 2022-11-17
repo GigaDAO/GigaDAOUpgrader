@@ -34,28 +34,35 @@ pub mod gdupgrader {
                 AccountMeta::new(ctx.accounts.target_program_buffer.key(), false), // target program buffer
                 AccountMeta::new(ctx.accounts.target_program.key(), false), // target program
                 AccountMeta::new(ctx.accounts.source_buffer.key(), false), // tmp buffer account
-                AccountMeta::new(ctx.accounts.target_program_buffer.key(), false), // spill account (signer or other?)
+                AccountMeta::new(ctx.accounts.signer.key(), false), // spill account (signer or other?)
                 AccountMeta::new_readonly(sysvar::rent::id(), false),
                 AccountMeta::new_readonly(sysvar::clock::id(), false),
                 AccountMeta::new_readonly(ctx.accounts.multisig_pda.key(), true), // multisig PDA
             ],
         );
 
-        let accounts = [
+        let mut accounts = [
             ctx.accounts.target_program_buffer.to_account_info().clone(),
             ctx.accounts.target_program.to_account_info().clone(),
             ctx.accounts.source_buffer.to_account_info().clone(),
-            ctx.accounts.target_program_buffer.to_account_info().clone(), // spill
+            ctx.accounts.signer.to_account_info().clone(), // spill
             ctx.accounts.rent.to_account_info().clone(),
             ctx.accounts.clock.to_account_info().clone(),
             ctx.accounts.multisig_pda.to_account_info().clone(),
         ];
 
-        // invoke_signed(
-        //     &instruction,
-        //     &accounts,
-        //     signer,
-        // )?;
+        accounts[0].is_writable = true;
+        accounts[1].is_writable = true;
+        accounts[2].is_writable = true;
+        accounts[3].is_writable = true;
+        accounts[6].is_writable = false;
+        accounts[6].is_signer = true;
+
+        invoke_signed(
+            &instruction,
+            &accounts,
+            signer,
+        )?;
 
         Ok(())
     }
@@ -63,12 +70,13 @@ pub mod gdupgrader {
 
 #[derive(Accounts)]
 pub struct Upgrade<'info> {
-    /// CHECK: bypass
-    pub target_program_buffer: AccountInfo<'info>,
+
+    pub target_program_buffer: Account<'info, ProgramData>,
     /// CHECK: bypass
     pub target_program: AccountInfo<'info>,
     /// CHECK: bypass
     pub source_buffer: AccountInfo<'info>,
+
     #[account(mut)]
     pub signer: Signer<'info>,
     pub rent: Sysvar<'info, Rent>,
