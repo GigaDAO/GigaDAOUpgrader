@@ -25,8 +25,7 @@ async function initialize() {
 
     let target_program_buffer = new anchor.web3.PublicKey("7mUcBh84gBpPpo8tCRWmxvsTSqnT79ooXFd3ozjmteZW");
     let target_program = new anchor.web3.PublicKey("7w9oX4fSFFW9YK7iWYqBUzEwXJHa3UY3wP4y8HvpaU2s");
-    // let source_buffer = new anchor.web3.PublicKey("3rkWkQ1dzhVgdUSWqscBQqzBpB6nnzppbnnFaHPVuNwG"); // TODO close this...
-    let source_buffer = new anchor.web3.PublicKey("HDmWtxcjDFxQjehJb4nygk8xKPgXKwjadSp1AngUE97B");
+    let source_buffer = new anchor.web3.PublicKey("3rkWkQ1dzhVgdUSWqscBQqzBpB6nnzppbnnFaHPVuNwG"); // TODO close this...
     let bft_loader_upgradeable = new anchor.web3.PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
 
     let [multisig_pda, _] = await anchor.web3.PublicKey.findProgramAddress(
