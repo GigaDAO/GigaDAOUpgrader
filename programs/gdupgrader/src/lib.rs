@@ -350,7 +350,6 @@ pub struct ExecuteSetAuthority<'info> {
     pub signer: Signer<'info>,
     #[account(mut)]
     pub target_program_buffer: Account<'info, ProgramData>,
-
     #[account(
     mut,
     seeds = [MULTISIG_PDA_SEED],
