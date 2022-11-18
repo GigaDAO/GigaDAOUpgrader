@@ -16,12 +16,11 @@ const GIGS_VAULT_PDA_SEED: &[u8] = b"gigs_vault_pda_seed";
 const PROPOSAL_PDA_SEED: &[u8] = b"proposal_pda_seed";
 
 // TODO remove this to initialize params
-const APPROVAL_THRESHOLD: u64 = 1_100_000_000_000; // 110M GIGS * 4 decimals
-const PROPOSAL_MINIMUM: u64 = 500_000_000_000; // 50M GIGS * 4 decimals
+// const APPROVAL_THRESHOLD: u64 = 1_100_000_000_000; // 110M GIGS * 4 decimals
+// const PROPOSAL_MINIMUM: u64 = 500_000_000_000; // 50M GIGS * 4 decimals
 
 #[program]
 pub mod gdupgrader {
-    use anchor_spl::token::accessor::amount;
     use super::*;
 
     pub fn initialize(
@@ -105,14 +104,71 @@ pub mod gdupgrader {
         Ok(())
     }
     pub fn close_ballot(ctx: Context<CloseBallot>) -> Result<()> {
-        // TODO transfer gigs from vault to receiver
-        // TODO if ballot matches active, reduce approval
+
+        if ctx.accounts.ballot.proposal_id == ctx.accounts.proposal.proposal_id {
+            ctx.accounts.proposal.num_votes -= ctx.accounts.ballot.num_votes;
+        }
+
+        // transfer gigs from vault to voter
+        let amount = ctx.accounts.ballot.num_votes;
+
+        // get seeds to sign for auth_pda
+        let (multisig_pda, bump_seed) = Pubkey::find_program_address(&[MULTISIG_PDA_SEED], ctx.program_id);
+        let seeds = &[&MULTISIG_PDA_SEED[..], &[bump_seed]];
+        let signer = &[&seeds[..]];
+
+        // check pda addy correct
+        if multisig_pda != ctx.accounts.multisig_pda.key() {
+            return Err(ErrorCode::InvalidAuthPda.into());
+        }
+
+        // transfer wsol
+        let cpi_accounts = Transfer {
+            from: ctx.accounts.gigs_vault.to_account_info(),
+            to: ctx.accounts.sender_gigs_ata.to_account_info(),
+            authority: ctx.accounts.multisig_pda.to_account_info(),
+        };
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
+        token::transfer(cpi_ctx, amount)?;
+
         Ok(())
     }
     pub fn execute_set_authority(ctx: Context<ExecuteSetAuthority>) -> Result<()> {
+
         // TODO check proposal is of type: set_authority
         // TODO check program data account and new authority match proposal
         // TODO check approval has requisite threshold
+
+        // create signer seed
+        let (multisig_pda, bump_seed) = Pubkey::find_program_address(&[MULTISIG_PDA_SEED], ctx.program_id);
+        if multisig_pda != ctx.accounts.multisig_pda.key() {
+            return err!(ErrorCode::InvalidAuthPda);
+        }
+        let seeds = &[&MULTISIG_PDA_SEED[..], &[bump_seed]];
+        let signer = &[&seeds[..]];
+
+        let instruction = Instruction::new_with_bincode(
+            bpf_loader_upgradeable::id(),
+            &UpgradeableLoaderInstruction::SetAuthority,
+            vec![
+                AccountMeta::new(ctx.accounts.target_program_buffer.key(), false), // target program buffer
+                AccountMeta::new_readonly(ctx.accounts.multisig_pda.key(), true), // multisig PDA
+                AccountMeta::new_readonly(ctx.accounts.new_authority.key(), true), // multisig PDA
+            ],
+        );
+
+        let accounts = [
+            ctx.accounts.target_program_buffer.to_account_info().clone(),
+            ctx.accounts.multisig_pda.to_account_info().clone(),
+            ctx.accounts.new_authority.to_account_info().clone(),
+        ];
+
+        invoke_signed(
+            &instruction,
+            &accounts,
+            signer,
+        )?;
 
         Ok(())
     }
@@ -144,7 +200,7 @@ pub mod gdupgrader {
             ],
         );
 
-        let mut accounts = [
+        let accounts = [
             ctx.accounts.target_program_buffer.to_account_info().clone(),
             ctx.accounts.target_program.to_account_info().clone(),
             ctx.accounts.source_buffer.to_account_info().clone(),
@@ -263,12 +319,48 @@ pub struct CloseBallot<'info> {
     bump,
     )]
     pub multisig_pda: Account<'info, AuthAccount>,
+    #[account(
+    mut,
+    close = signer,
+    )]
+    pub ballot: Account<'info, Ballot>,
+    #[account(
+    mut,
+    seeds = [PROPOSAL_PDA_SEED],
+    bump,
+    )]
+    pub proposal: Account<'info, Proposal>,
+    pub gigs_mint: Account<'info, Mint>,
+    #[account(
+    mut,
+    seeds = [GIGS_VAULT_PDA_SEED],
+    bump,
+    )]
+    pub gigs_vault: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub sender_gigs_ata: Account<'info, TokenAccount>,
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]
 pub struct ExecuteSetAuthority<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
+    #[account(mut)]
+    pub target_program_buffer: Account<'info, ProgramData>,
+
+    #[account(
+    mut,
+    seeds = [MULTISIG_PDA_SEED],
+    bump,
+    )]
+    pub multisig_pda: Account<'info, AuthAccount>,
+    /// CHECK: bypass
+    pub new_authority: AccountInfo<'info>,
+    /// CHECK: bypass
+    pub bpf_loader: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
