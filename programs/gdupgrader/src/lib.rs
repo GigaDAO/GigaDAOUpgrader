@@ -21,6 +21,7 @@ const PROPOSAL_MINIMUM: u64 = 500_000_000_000; // 50M GIGS * 4 decimals
 
 #[program]
 pub mod gdupgrader {
+    use anchor_spl::token::accessor::amount;
     use super::*;
 
     pub fn initialize(
@@ -45,6 +46,8 @@ pub mod gdupgrader {
         amount: u64,
     ) -> Result<()> {
 
+        // TODO check mint against proposal struct
+
         // check amount >= minimum proposal amount
         if amount < ctx.accounts.proposal.proposal_minimum {
             return err!(ErrorCode::InsufficientAmount);
@@ -68,12 +71,37 @@ pub mod gdupgrader {
 
         Ok(())
     }
-    pub fn cast_ballot(ctx: Context<CastBallot>) -> Result<()> {
-        // TODO check if proposal is active
-        // TODO check proposal id matches
-        // TODO initialize ballot
-        // TODO update proposal approval
-        // TODO transfer to vault
+    pub fn cast_ballot(
+        ctx: Context<CastBallot>,
+        proposal_id: u64,
+        amount: u64,
+    ) -> Result<()> {
+
+        // check if proposal is active
+        if !ctx.accounts.proposal.is_active {
+            return err!(ErrorCode::ProposalNotActive);
+        }
+
+        // check proposal id matches
+         if proposal_id != ctx.accounts.proposal.proposal_id {
+            return err!(ErrorCode::InvalidProposalId);
+        }
+
+        // initialize ballot
+        ctx.accounts.ballot.voter_address = ctx.accounts.signer.key();
+        ctx.accounts.ballot.num_votes = amount;
+        ctx.accounts.ballot.proposal_id = proposal_id;
+
+        // update proposal approval
+        ctx.accounts.proposal.num_votes += amount;
+
+        // transfer amount
+        let signer_handle = &ctx.accounts.signer;
+        let tx_handle = ctx.accounts.sender_gigs_ata.to_account_info();
+        let rx_handle = ctx.accounts.gigs_vault.to_account_info();
+        let token_program_acct_info = ctx.accounts.token_program.to_account_info();
+        transfer_tokens(signer_handle, tx_handle, rx_handle, token_program_acct_info, amount)?;
+
         Ok(())
     }
     pub fn close_ballot(ctx: Context<CloseBallot>) -> Result<()> {
@@ -153,7 +181,7 @@ pub struct Initialize<'info> {
     seeds = [PROPOSAL_PDA_SEED],
     bump,
     payer = signer,
-    space = 666,
+    space = 666, // TODO make this precise
     )]
     pub proposal: Account<'info, Proposal>,
     pub gigs_mint: Account<'info, Mint>, // TODO add constraint for this
@@ -199,6 +227,30 @@ pub struct Propose<'info> {
 pub struct CastBallot<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
+    #[account(
+    init,
+    payer = signer,
+    space = 64,
+    )]
+    pub ballot: Account<'info, Ballot>,
+    #[account(
+    mut,
+    seeds = [PROPOSAL_PDA_SEED],
+    bump,
+    )]
+    pub proposal: Account<'info, Proposal>,
+    pub gigs_mint: Account<'info, Mint>,
+    #[account(
+    mut,
+    seeds = [GIGS_VAULT_PDA_SEED],
+    bump,
+    )]
+    pub gigs_vault: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub sender_gigs_ata: Account<'info, TokenAccount>,
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]
@@ -313,6 +365,10 @@ pub enum ErrorCode {
     InsufficientAmount,
     #[msg("Invalid Authorizer PDA.")]
     InvalidAuthPda,
+    #[msg("Proposal Not Active.")]
+    ProposalNotActive,
+    #[msg("Invalid Proposal ID.")]
+    InvalidProposalId,
 }
 
 
