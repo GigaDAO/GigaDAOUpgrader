@@ -191,8 +191,7 @@ async function close_ballot() {
 
     let gigsMint = new anchor.web3.PublicKey("9U8Bn6zAf6Wyp1YHdXtLyfbN7yMvdvW1qQY475iZ5ftZ");
     let senderGigsAta = new anchor.web3.PublicKey("AHY93WLfztEaFk2tycdTbfnAQCdTmeego28ebUhykPec");
-    // let ballot = new anchor.web3.PublicKey("Asn7gbJ5gqaGy2UrK9fqgqv7vmoKoYad942gkdcweoZG");
-    let ballot = new anchor.web3.PublicKey("9GpVR7Y8o8odx3oLZdmJ88Hn68DWsbUSW1dkMuGJBsNt");
+    let ballot = new anchor.web3.PublicKey("5wZ9YRcMzQAF3piARDaHQDiKbnE9qsE8VPf5GUYinqrL");
 
     const tx = await program.methods.closeBallot()
         .accounts({
@@ -247,7 +246,7 @@ async function close_ballot() {
 //
 // }
 
-execute_set_authority()
+close_ballot()
     .then(()=>{
         console.log("done")
     })
