@@ -133,10 +133,21 @@ pub mod gdupgrader {
     }
     pub fn execute_set_authority(ctx: Context<ExecuteSetAuthority>) -> Result<()> {
 
-        // TODO check proposal is of type: set_authority
+        if !ctx.accounts.proposal.is_active {
+            return err!(ErrorCode::ProposalNotActive);
+        }
 
-        // TODO check program data account and new authority match proposal
-        // TODO check approval has requisite threshold
+        if ctx.accounts.proposal.proposal_type != ProposalType::SetAuthority {
+            return err!(ErrorCode::InvalidProposalType);
+        }
+
+        if ctx.accounts.new_authority.key() != ctx.accounts.proposal.new_authority {
+            return err!(ErrorCode::InvalidProposalParams);
+        }
+
+        if ctx.accounts.proposal.num_votes < ctx.accounts.proposal.approval_threshold {
+            return err!(ErrorCode::InsufficientApprovalVotes);
+        }
 
         // create signer seed
         let (multisig_pda, bump_seed) = Pubkey::find_program_address(&[MULTISIG_PDA_SEED], ctx.program_id);
@@ -168,15 +179,31 @@ pub mod gdupgrader {
             signer,
         )?;
 
-        // TODO set is active to false
+        ctx.accounts.proposal.is_active = false;
 
         Ok(())
     }
     pub fn execute_upgrade_program(ctx: Context<ExecuteUpgradeProgram>) -> Result<()> {
 
-        // TODO check proposal is of type: upgrade_program
-        // TODO check source buffer and target program match proposal
-        // TODO check approval has requisite threshold
+        if !ctx.accounts.proposal.is_active {
+            return err!(ErrorCode::ProposalNotActive);
+        }
+
+        if ctx.accounts.proposal.proposal_type != ProposalType::UpgradeProgram {
+            return err!(ErrorCode::InvalidProposalType);
+        }
+
+        if ctx.accounts.source_buffer.key() != ctx.accounts.proposal.source_buffer {
+            return err!(ErrorCode::InvalidProposalParams);
+        }
+
+        if ctx.accounts.target_program_buffer.key() != ctx.accounts.proposal.target_buffer {
+            return err!(ErrorCode::InvalidProposalParams);
+        }
+
+        if ctx.accounts.proposal.num_votes < ctx.accounts.proposal.approval_threshold {
+            return err!(ErrorCode::InsufficientApprovalVotes);
+        }
 
         // create signer seed
         let (multisig_pda, bump_seed) = Pubkey::find_program_address(&[MULTISIG_PDA_SEED], ctx.program_id);
@@ -216,7 +243,7 @@ pub mod gdupgrader {
             signer,
         )?;
 
-        // TODO set is active to false
+        ctx.accounts.proposal.is_active = false;
 
         Ok(())
     }
@@ -375,6 +402,12 @@ pub struct ExecuteSetAuthority<'info> {
     bump,
     )]
     pub multisig_pda: Account<'info, AuthAccount>,
+    #[account(
+    mut,
+    seeds = [PROPOSAL_PDA_SEED],
+    bump,
+    )]
+    pub proposal: Account<'info, Proposal>,
     /// CHECK: bypass
     pub new_authority: AccountInfo<'info>,
     /// CHECK: bypass
@@ -399,6 +432,12 @@ pub struct ExecuteUpgradeProgram<'info> {
     bump,
     )]
     pub multisig_pda: Account<'info, AuthAccount>,
+    #[account(
+    mut,
+    seeds = [PROPOSAL_PDA_SEED],
+    bump,
+    )]
+    pub proposal: Account<'info, Proposal>,
     pub system_program: Program<'info, System>,
     /// CHECK: bypass
     pub bpf_loader: AccountInfo<'info>,
@@ -438,7 +477,7 @@ pub struct Ballot {
     pub voter_address: Pubkey,
 }
 
-#[derive(Clone, AnchorSerialize, AnchorDeserialize)]
+#[derive(Clone, AnchorSerialize, AnchorDeserialize, PartialEq)]
 pub enum ProposalType {
     UpgradeProgram,
     SetAuthority,
@@ -479,6 +518,12 @@ pub enum ErrorCode {
     ProposalNotActive,
     #[msg("Invalid Proposal ID.")]
     InvalidProposalId,
+    #[msg("Invalid Proposal Type.")]
+    InvalidProposalType,
+    #[msg("Invalid Proposal Params.")]
+    InvalidProposalParams,
+    #[msg("Insufficient Approval Votes.")]
+    InsufficientApprovalVotes,
 }
 
 
