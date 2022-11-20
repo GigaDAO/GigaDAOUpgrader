@@ -66,6 +66,11 @@ pub mod gdupgrader {
         ctx.accounts.proposal.num_votes = amount;
         ctx.accounts.proposal.is_active = true;
 
+        // init ballot
+        ctx.accounts.ballot.voter_address = ctx.accounts.signer.key();
+        ctx.accounts.ballot.num_votes = amount;
+        ctx.accounts.ballot.proposal_id = ctx.accounts.proposal.proposal_id;
+
         Ok(())
     }
     pub fn cast_ballot(
@@ -296,6 +301,12 @@ pub struct Propose<'info> {
     constraint = proposal.governance_token_mint == gigs_mint.key(),
     )]
     pub proposal: Account<'info, Proposal>,
+    #[account(
+    init,
+    payer = signer,
+    space = BALLOT_MAX_LEN,
+    )]
+    pub ballot: Account<'info, Ballot>,
     pub gigs_mint: Account<'info, Mint>,
     #[account(
     mut,
