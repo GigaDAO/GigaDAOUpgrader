@@ -130,4 +130,28 @@ describe("gdupgrader", () => {
         console.log("Your transaction signature", tx);
     });
 
+    it("Cast ballot", async () => {
+
+        let ballot = anchor.web3.Keypair.generate();
+        let proposal_id = new anchor.BN(1);
+        let amount = new anchor.BN(500);
+
+        // @ts-ignore
+        const tx = await program.methods.castBallot(proposal_id, amount)
+            .accounts({
+                signer: program.provider.publicKey,
+                ballot: ballot.publicKey,
+                proposal: proposalPda,
+                gigsMint: gigsMint,
+                gigsVault: gigsVault,
+                senderGigsAta: senderGigsAta,
+                systemProgram: anchor.web3.SystemProgram.programId,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+            })
+            .signers([ballot])
+            .rpc();
+        console.log("Your transaction signature", tx);
+    });
+
 });
