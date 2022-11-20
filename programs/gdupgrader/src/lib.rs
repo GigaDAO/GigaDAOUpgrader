@@ -11,11 +11,12 @@ declare_id!("7zytPdaZiXNjYQh1cStfAcFws7ZRhSLtUfhdoev9vp5G");
 
 // consts
 pub const MIN_ACCOUNT_LEN: usize = 9;
+pub const PROPOSAL_MAX_LEN: usize = 512;
+pub const BALLOT_MAX_LEN: usize = 64;
 const MULTISIG_PDA_SEED: &[u8] = b"multisig_pda_seed";
 const GIGS_VAULT_PDA_SEED: &[u8] = b"gigs_vault_pda_seed";
 const PROPOSAL_PDA_SEED: &[u8] = b"proposal_pda_seed";
 
-// TODO remove this to initialize params
 // const APPROVAL_THRESHOLD: u64 = 1_100_000_000_000; // 110M GIGS * 4 decimals
 // const PROPOSAL_MINIMUM: u64 = 500_000_000_000; // 50M GIGS * 4 decimals
 
@@ -266,7 +267,7 @@ pub struct Initialize<'info> {
     seeds = [PROPOSAL_PDA_SEED],
     bump,
     payer = signer,
-    space = 666, // TODO make this precise
+    space = PROPOSAL_MAX_LEN,
     )]
     pub proposal: Account<'info, Proposal>,
     pub gigs_mint: Account<'info, Mint>,
@@ -321,7 +322,7 @@ pub struct CastBallot<'info> {
     #[account(
     init,
     payer = signer,
-    space = 64, // TODO
+    space = BALLOT_MAX_LEN,
     )]
     pub ballot: Account<'info, Ballot>,
     #[account(
