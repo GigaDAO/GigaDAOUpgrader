@@ -7,7 +7,7 @@ use anchor_lang::solana_program::loader_upgradeable_instruction::UpgradeableLoad
 use solana_program::program::invoke_signed;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
-declare_id!("7zytPdaZiXNjYQh1cStfAcFws7ZRhSLtUfhdoev9vp5G");
+declare_id!("GzMvD8AGSiRhHapNsJzUMoYR3pkbCg6vPnnopaeFZE7E");
 
 // consts
 pub const MIN_ACCOUNT_LEN: usize = 9;
@@ -174,7 +174,7 @@ pub mod gdupgrader {
             vec![
                 AccountMeta::new(ctx.accounts.target_program_buffer.key(), false), // target program buffer
                 AccountMeta::new_readonly(ctx.accounts.multisig_pda.key(), true), // multisig PDA
-                AccountMeta::new_readonly(ctx.accounts.new_authority.key(), true), // multisig PDA
+                AccountMeta::new_readonly(ctx.accounts.new_authority.key(), true),
             ],
         );
 
@@ -427,6 +427,7 @@ pub struct ExecuteSetAuthority<'info> {
     pub proposal: Account<'info, Proposal>,
     /// CHECK: bypass
     pub new_authority: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
     /// CHECK: bypass
     pub bpf_loader: AccountInfo<'info>,
 }
