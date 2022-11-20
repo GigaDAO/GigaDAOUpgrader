@@ -25,13 +25,12 @@ pub mod gdupgrader {
 
     pub fn initialize(
         ctx: Context<Initialize>,
-        governance_token_mint: Pubkey,
         approval_threshold: u64,
         proposal_minimum: u64,
     ) -> Result<()> {
         ctx.accounts.proposal.is_active = false;
         ctx.accounts.proposal.proposal_id = 0;
-        ctx.accounts.proposal.governance_token_mint = governance_token_mint;
+        ctx.accounts.proposal.governance_token_mint = ctx.accounts.gigs_mint.key();
         ctx.accounts.proposal.approval_threshold = approval_threshold;
         ctx.accounts.proposal.proposal_minimum = proposal_minimum;
         Ok(())
@@ -44,8 +43,6 @@ pub mod gdupgrader {
         new_authority: Pubkey,
         amount: u64,
     ) -> Result<()> {
-
-        // TODO check mint against proposal struct
 
         // check amount >= minimum proposal amount
         if amount < ctx.accounts.proposal.proposal_minimum {
@@ -137,6 +134,7 @@ pub mod gdupgrader {
     pub fn execute_set_authority(ctx: Context<ExecuteSetAuthority>) -> Result<()> {
 
         // TODO check proposal is of type: set_authority
+
         // TODO check program data account and new authority match proposal
         // TODO check approval has requisite threshold
 
@@ -169,6 +167,8 @@ pub mod gdupgrader {
             &accounts,
             signer,
         )?;
+
+        // TODO set is active to false
 
         Ok(())
     }
@@ -216,6 +216,8 @@ pub mod gdupgrader {
             signer,
         )?;
 
+        // TODO set is active to false
+
         Ok(())
     }
 }
@@ -240,7 +242,7 @@ pub struct Initialize<'info> {
     space = 666, // TODO make this precise
     )]
     pub proposal: Account<'info, Proposal>,
-    pub gigs_mint: Account<'info, Mint>, // TODO add constraint for this
+    pub gigs_mint: Account<'info, Mint>,
     #[account(
     init,
     token::mint = gigs_mint,
@@ -263,16 +265,22 @@ pub struct Propose<'info> {
     mut,
     seeds = [PROPOSAL_PDA_SEED],
     bump,
+    constraint = proposal.governance_token_mint == gigs_mint.key(),
     )]
     pub proposal: Account<'info, Proposal>,
     pub gigs_mint: Account<'info, Mint>,
     #[account(
     mut,
+    token::mint = gigs_mint,
     seeds = [GIGS_VAULT_PDA_SEED],
     bump,
     )]
     pub gigs_vault: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(
+    mut,
+    token::mint = gigs_mint,
+    constraint = sender_gigs_ata.owner.key() == signer.key(),
+    )]
     pub sender_gigs_ata: Account<'info, TokenAccount>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
@@ -286,7 +294,7 @@ pub struct CastBallot<'info> {
     #[account(
     init,
     payer = signer,
-    space = 64,
+    space = 64, // TODO
     )]
     pub ballot: Account<'info, Ballot>,
     #[account(
@@ -298,11 +306,16 @@ pub struct CastBallot<'info> {
     pub gigs_mint: Account<'info, Mint>,
     #[account(
     mut,
+    token::mint = gigs_mint,
     seeds = [GIGS_VAULT_PDA_SEED],
     bump,
     )]
     pub gigs_vault: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(
+    mut,
+    token::mint = gigs_mint,
+    constraint = sender_gigs_ata.owner.key() == signer.key(),
+    )]
     pub sender_gigs_ata: Account<'info, TokenAccount>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
@@ -322,6 +335,7 @@ pub struct CloseBallot<'info> {
     #[account(
     mut,
     close = signer,
+    constraint = ballot.voter_address == signer.key(),
     )]
     pub ballot: Account<'info, Ballot>,
     #[account(
@@ -333,11 +347,16 @@ pub struct CloseBallot<'info> {
     pub gigs_mint: Account<'info, Mint>,
     #[account(
     mut,
+    token::mint = gigs_mint,
     seeds = [GIGS_VAULT_PDA_SEED],
     bump,
     )]
     pub gigs_vault: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(
+    mut,
+    token::mint = gigs_mint,
+    constraint = sender_gigs_ata.owner.key() == signer.key(),
+    )]
     pub sender_gigs_ata: Account<'info, TokenAccount>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
