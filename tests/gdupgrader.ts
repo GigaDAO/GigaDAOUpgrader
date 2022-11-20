@@ -14,6 +14,7 @@ let gigsVault;
 let proposalPda;
 let gigsMint;
 let senderGigsAta;
+let ballot;
 
 // utils
 function to_lamports(num_sol) {
@@ -132,7 +133,7 @@ describe("gdupgrader", () => {
 
     it("Cast ballot", async () => {
 
-        let ballot = anchor.web3.Keypair.generate();
+        ballot = anchor.web3.Keypair.generate();
         let proposal_id = new anchor.BN(1);
         let amount = new anchor.BN(500);
 
@@ -150,6 +151,26 @@ describe("gdupgrader", () => {
                 rent: anchor.web3.SYSVAR_RENT_PUBKEY,
             })
             .signers([ballot])
+            .rpc();
+        console.log("Your transaction signature", tx);
+    });
+
+    it("Close ballot", async () => {
+
+        // @ts-ignore
+        const tx = await program.methods.closeBallot()
+            .accounts({
+                signer: program.provider.publicKey,
+                multisigPda: multisigPda,
+                ballot: ballot.publicKey,
+                proposal: proposalPda,
+                gigsMint: gigsMint,
+                gigsVault: gigsVault,
+                senderGigsAta: senderGigsAta,
+                systemProgram: anchor.web3.SystemProgram.programId,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+            })
             .rpc();
         console.log("Your transaction signature", tx);
     });
