@@ -45,6 +45,11 @@ pub mod gdupgrader {
         amount: u64,
     ) -> Result<()> {
 
+        match proposal_type {
+            ProposalType::UpgradeProgram => {msg!("got Upgrade Type");},
+            ProposalType::SetAuthority => {msg!("got Set auth type");}
+        }
+
         // check amount >= minimum proposal amount
         if amount < ctx.accounts.proposal.proposal_minimum {
             return err!(ErrorCode::InsufficientAmount);
