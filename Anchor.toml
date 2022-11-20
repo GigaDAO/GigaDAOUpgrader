@@ -8,8 +8,8 @@ gdupgrader = "7zytPdaZiXNjYQh1cStfAcFws7ZRhSLtUfhdoev9vp5G"
 url = "https://api.apr.dev"
 
 [provider]
-#cluster = "localnet"
-cluster = "devnet"
+cluster = "localnet"
+#cluster = "devnet"
 wallet = "/home/alphaprime8/.config/solana/id.json"
 
 [scripts]
