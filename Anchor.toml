@@ -9,7 +9,8 @@ url = "https://api.apr.dev"
 
 [provider]
 #cluster = "localnet"
-cluster = "devnet"
+#cluster = "devnet"
+cluster = "mainnet"
 wallet = "/home/alphaprime8/.config/solana/id.json"
 
 [scripts]

@@ -2,7 +2,7 @@ import * as anchor from "@project-serum/anchor";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 // env consts
-const IS_DEVNET = true;
+const IS_DEVNET = false;
 const LOCAL_KEYPAIR_FPATH = "/home/alphaprime8/.config/solana/id.json";
 const PROGRAM_ID = 'GzMvD8AGSiRhHapNsJzUMoYR3pkbCg6vPnnopaeFZE7E'; // can also load from file as done with localKeypair below
 
@@ -34,7 +34,9 @@ async function initialize() {
     let [multisig_pda, _] = await anchor.web3.PublicKey.findProgramAddress(
         [Buffer.from(anchor.utils.bytes.utf8.encode(MULTISIG_PDA_SEED))],
         program.programId
-    ); // CKk2EQ6ybz6qMxMAVgDxdRksjLAQgLTfW47t9LwERW3z
+    );
+
+    console.log("Got multisig_pda: ", multisig_pda.toString());
 
     let [gigsVault, _b2] = await anchor.web3.PublicKey.findProgramAddress(
         [Buffer.from(anchor.utils.bytes.utf8.encode(GIGS_VAULT_PDA_SEED))],
@@ -46,10 +48,10 @@ async function initialize() {
         program.programId
     );
 
-    let gigsMint = new anchor.web3.PublicKey("58enXRckAspQsKqKr9ct7Hu69ope2uj5fFdmFuXNxmpc");
+    let gigsMint = new anchor.web3.PublicKey("9U8Bn6zAf6Wyp1YHdXtLyfbN7yMvdvW1qQY475iZ5ftZ");
 
-    let approval_threshold = new anchor.BN(1000);
-    let proposal_minimum = new anchor.BN(500);
+    let approval_threshold = new anchor.BN(1100000000000); // 110M GIGS
+    let proposal_minimum = new anchor.BN(500000000000); // 50M GIGS
 
     const tx = await program.methods.initialize(approval_threshold, proposal_minimum)
         .accounts({
@@ -78,15 +80,15 @@ async function propose() {
     );
 
     let ballot = anchor.web3.Keypair.generate();
-    let gigsMint = new anchor.web3.PublicKey("58enXRckAspQsKqKr9ct7Hu69ope2uj5fFdmFuXNxmpc");
-    let senderGigsAta = new anchor.web3.PublicKey("4DMKoc2UZgenrdG7Sxk2b3JusmcQ6WREAgUTenDTj2Tb");
+    let gigsMint = new anchor.web3.PublicKey("9U8Bn6zAf6Wyp1YHdXtLyfbN7yMvdvW1qQY475iZ5ftZ");
+    let senderGigsAta = new anchor.web3.PublicKey("AHY93WLfztEaFk2tycdTbfnAQCdTmeego28ebUhykPec");
 
     let proposal_type = ProposalType.SetAuthority;
-    let target_buffer = new anchor.web3.PublicKey("4jQUaj3oR5H3vgLNtKXvf2V8v5rubeLcsqZD1rfT1rwb");
+    let target_buffer = new anchor.web3.PublicKey("FVqHcA2zMsRSffyPqnR7jwjhUMHxm1oXguchFSw2PyHs");
     let source_buffer = program.provider.publicKey;
-    let new_authority = program.provider.publicKey; // TODO change to owner 1?
+    let new_authority = program.provider.publicKey;
 
-    let amount = new anchor.BN(500);
+    let amount = new anchor.BN(1100000000000);
 
     // @ts-ignore
     const tx = await program.methods.propose(proposal_type, target_buffer, source_buffer, new_authority, amount)
@@ -145,19 +147,12 @@ async function cast_ballot() {
 
 async function execute_set_authority() {
     const program = await initProgram();
-    let target_buffer = new anchor.web3.PublicKey("4jQUaj3oR5H3vgLNtKXvf2V8v5rubeLcsqZD1rfT1rwb");
+    let target_buffer = new anchor.web3.PublicKey("FVqHcA2zMsRSffyPqnR7jwjhUMHxm1oXguchFSw2PyHs");
     let bft_loader_upgradeable = new anchor.web3.PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
     let [multisig_pda, _] = await anchor.web3.PublicKey.findProgramAddress(
         [Buffer.from(anchor.utils.bytes.utf8.encode(MULTISIG_PDA_SEED))],
         program.programId
     );
-        let [gigsVault, _b2] = await anchor.web3.PublicKey.findProgramAddress(
-        [Buffer.from(anchor.utils.bytes.utf8.encode(GIGS_VAULT_PDA_SEED))],
-        program.programId
-    );
-    let gigsMint = new anchor.web3.PublicKey("58enXRckAspQsKqKr9ct7Hu69ope2uj5fFdmFuXNxmpc");
-    let senderGigsAta = new anchor.web3.PublicKey("4DMKoc2UZgenrdG7Sxk2b3JusmcQ6WREAgUTenDTj2Tb");
-
     let [proposalPda, _b3] = await anchor.web3.PublicKey.findProgramAddress(
         [Buffer.from(anchor.utils.bytes.utf8.encode(PROPOSAL_PDA_SEED))],
         program.programId
@@ -194,8 +189,8 @@ async function close_ballot() {
         program.programId
     );
 
-    let gigsMint = new anchor.web3.PublicKey("58enXRckAspQsKqKr9ct7Hu69ope2uj5fFdmFuXNxmpc");
-    let senderGigsAta = new anchor.web3.PublicKey("4DMKoc2UZgenrdG7Sxk2b3JusmcQ6WREAgUTenDTj2Tb");
+    let gigsMint = new anchor.web3.PublicKey("9U8Bn6zAf6Wyp1YHdXtLyfbN7yMvdvW1qQY475iZ5ftZ");
+    let senderGigsAta = new anchor.web3.PublicKey("AHY93WLfztEaFk2tycdTbfnAQCdTmeego28ebUhykPec");
     // let ballot = new anchor.web3.PublicKey("Asn7gbJ5gqaGy2UrK9fqgqv7vmoKoYad942gkdcweoZG");
     let ballot = new anchor.web3.PublicKey("9GpVR7Y8o8odx3oLZdmJ88Hn68DWsbUSW1dkMuGJBsNt");
 
@@ -252,7 +247,7 @@ async function close_ballot() {
 //
 // }
 
-close_ballot()
+execute_set_authority()
     .then(()=>{
         console.log("done")
     })
