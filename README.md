@@ -5,6 +5,13 @@ Mainnet Program ID: `GzMvD8AGSiRhHapNsJzUMoYR3pkbCg6vPnnopaeFZE7E`
 This Solana on-chain program is implemented in anchorlang framework and serves to gate control of key smart contracts
 and treasury programs behind the GIGS governance token. 
 
+Note: The design goal of this program can be summarized in one word: ***simplicity***.
+
+It's written to be as easy to audit as possible. It can be deployed for use with any spl governance token, not just GIGS. 
+We used the variable name `gigs_mint`, but it's not hardcoded, so if you deploy your own instance and initialize it 
+with a different SPL governance token in place of GIGS, it will still work as expected. Also, this program intentionally 
+avoids generic transaction types. It's meant only for program upgrades and program upgrade authority changes. 
+
 ### Voting
 
 This program is capable of executing two types of governance proposals:
